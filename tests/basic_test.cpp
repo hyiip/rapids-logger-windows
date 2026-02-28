@@ -8,6 +8,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -21,7 +22,12 @@ struct LoggerTest : public ::testing::Test {
   }
 
   void clear_sink() { oss.str(""); }
-  std::string sink_content() { return oss.str(); }
+  std::string sink_content()
+  {
+    auto s = oss.str();
+    s.erase(std::remove(s.begin(), s.end(), '\r'), s.end());
+    return s;
+  }
 
   std::ostringstream oss;
   rapids_logger::logger logger_;
@@ -90,7 +96,9 @@ TEST_F(LoggerTest, TwoSinks)
 
   logger_.info("info");
   EXPECT_EQ(this->sink_content(), "info\n");
-  EXPECT_EQ(oss2.str(), "info\n");
+  auto s2 = oss2.str();
+  s2.erase(std::remove(s2.begin(), s2.end(), '\r'), s2.end());
+  EXPECT_EQ(s2, "info\n");
 }
 
 TEST_F(LoggerTest, CallbackSink)

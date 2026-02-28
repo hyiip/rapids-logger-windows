@@ -13,7 +13,13 @@
 #include <type_traits>
 #include <vector>
 
-#define RAPIDS_LOGGER_EXPORT __attribute__((visibility("default")))
+#if defined(_MSC_VER)
+  #define RAPIDS_LOGGER_EXPORT __declspec(dllexport)
+#elif defined(__GNUC__)
+  #define RAPIDS_LOGGER_EXPORT __attribute__((visibility("default")))
+#else
+  #define RAPIDS_LOGGER_EXPORT
+#endif
 
 namespace rapids_logger {
 
@@ -48,9 +54,19 @@ DEFINE_ENUM_CLASS_OPERATOR(level_enum, >=);
 
 namespace detail {
 // Forward declare the implementation classes.
-class logger_impl;
-class sink_impl;
+class RAPIDS_LOGGER_EXPORT logger_impl;
+class RAPIDS_LOGGER_EXPORT sink_impl;
 }  // namespace detail
+
+// Suppress C4251 (MSVC cl.exe) and #1394-D (nvcc) for std::unique_ptr/std::vector
+// members in exported classes - these are pimpl types, safe to cross DLL boundary.
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#endif
+#ifdef __NVCC__
+#pragma nv_diag_suppress 1394
+#endif
 
 // Forward declare for the sink for the logger to use.
 class RAPIDS_LOGGER_EXPORT sink;
@@ -78,7 +94,7 @@ class RAPIDS_LOGGER_EXPORT logger {
    * vector-like operations performed on this class are reflected in the underlying spdlog
    * logger's set of sinks.
    */
-  class sink_vector {
+  class RAPIDS_LOGGER_EXPORT sink_vector {
    public:
     using Iterator      = std::vector<sink_ptr>::iterator;        ///< The iterator type
     using ConstIterator = std::vector<sink_ptr>::const_iterator;  ///< The const iterator type
@@ -471,5 +487,12 @@ struct RAPIDS_LOGGER_EXPORT log_level_setter {
   logger& logger_;
   level_enum prev_level_;
 };
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+#ifdef __NVCC__
+#pragma nv_diag_default 1394
+#endif
 
 }  // namespace rapids_logger

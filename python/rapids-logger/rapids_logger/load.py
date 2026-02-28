@@ -4,6 +4,7 @@
 
 import ctypes
 import os
+import sys
 
 PREFERRED_LOAD_FLAG = ctypes.RTLD_LOCAL
 
@@ -20,21 +21,40 @@ def _load_wheel_installation(soname: str):
 
     Returns ``None`` if the library cannot be loaded.
     """
-    if os.path.isfile(
-        lib := os.path.join(os.path.dirname(__file__), "lib64", soname)
-    ):
-        return ctypes.CDLL(lib, PREFERRED_LOAD_FLAG)
+    pkg_dir = os.path.dirname(__file__)
+    # On Windows, check both bin/ and lib/ since CMake may install DLLs
+    # to either location depending on the project's install rules.
+    search_dirs = (["bin", "lib"] if sys.platform == "win32" else ["lib64"])
+    for subdir in search_dirs:
+        lib = os.path.join(pkg_dir, subdir, soname)
+        if os.path.isfile(lib):
+            return ctypes.CDLL(lib, PREFERRED_LOAD_FLAG)
     return None
 
 
+def _add_dll_directories():
+    """On Windows, add DLL directories so .pyd files can find native libraries."""
+    if sys.platform != "win32":
+        return
+    pkg_dir = os.path.dirname(__file__)
+    for subdir in ("bin", "lib"):
+        dll_dir = os.path.join(pkg_dir, subdir)
+        if os.path.isdir(dll_dir):
+            os.add_dll_directory(dll_dir)
+
+
 def load_library():
-    """Dynamically load libcudf.so and its dependencies"""
+    """Dynamically load rapids_logger and its dependencies"""
+    # On Windows, register DLL directories so that extension modules (.pyd)
+    # can resolve their native library dependencies.
+    _add_dll_directories()
+
     prefer_system_installation = (
         os.getenv("RAPIDS_LOGGER_PREFER_SYSTEM_LIBRARY", "false").lower()
         != "false"
     )
 
-    soname = "librapids_logger.so"
+    soname = "rapids_logger.dll" if sys.platform == "win32" else "librapids_logger.so"
     logger_lib = None
     if prefer_system_installation:
         # Prefer a system library if one is present to

@@ -8,6 +8,7 @@
 #include <rapids_logger/log_levels.h>
 #include <rapids_logger/logger.hpp>
 
+#include <algorithm>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -48,11 +49,13 @@ int main()
   if (RAPIDS_TEST_LOG_ACTIVE_LEVEL <= RAPIDS_LOGGER_LOG_LEVEL_CRITICAL) {
     expected << "critical\n";
   }
-  if (default_stream().str() == expected.str()) {
+  auto actual = default_stream().str();
+  actual.erase(std::remove(actual.begin(), actual.end(), '\r'), actual.end());
+  if (actual == expected.str()) {
     return 0;
   } else {
     // Print to make debugging easier with verbose ctest outputs in case of failure.
-    std::cout << "The log output is: " << default_stream().str() << std::endl;
+    std::cout << "The log output is: " << actual << std::endl;
     return 1;
   }
 }

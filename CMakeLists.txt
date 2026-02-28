@@ -87,20 +87,30 @@ target_include_directories(
 )
 set_target_properties(
   rapids_logger
-  PROPERTIES BUILD_RPATH "\$ORIGIN"
-             INSTALL_RPATH "\$ORIGIN"
-             CXX_STANDARD 20
+  PROPERTIES CXX_STANDARD 20
              CXX_STANDARD_REQUIRED ON
              CXX_VISIBILITY_PRESET hidden
              POSITION_INDEPENDENT_CODE ON
 )
+if(NOT WIN32)
+  set_target_properties(
+    rapids_logger
+    PROPERTIES BUILD_RPATH "\$ORIGIN"
+               INSTALL_RPATH "\$ORIGIN"
+  )
+endif()
+if(WIN32)
+  set_target_properties(rapids_logger PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()
 
 # Get spdlog
 if(RAPIDS_LOGGER_HIDE_ALL_SPDLOG_SYMBOLS)
   set(CPM_DOWNLOAD_spdlog ON)
   get_spdlog(CPM_ARGS OPTIONS "BUILD_SHARED_LIBS OFF" "SPDLOG_BUILD_SHARED OFF")
   set_target_properties(spdlog PROPERTIES POSITION_INDEPENDENT_CODE ON)
-  target_link_options(rapids_logger PRIVATE "LINKER:--exclude-libs,libspdlog")
+  if(NOT WIN32)
+    target_link_options(rapids_logger PRIVATE "LINKER:--exclude-libs,libspdlog")
+  endif()
 else()
   get_spdlog(
     BUILD_EXPORT_SET rapids-logger-exports INSTALL_EXPORT_SET rapids-logger-exports CPM_ARGS

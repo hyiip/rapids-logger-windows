@@ -81,7 +81,7 @@ level_enum from_spdlog_level(spdlog::level::level_enum lvl)
  *
  * This class is the impl part of the PImpl for the sink.
  */
-class sink_impl {
+class RAPIDS_LOGGER_EXPORT sink_impl {
  public:
   sink_impl(std::shared_ptr<spdlog::sinks::sink> sink) : underlying{sink} {}
 
@@ -96,7 +96,7 @@ class sink_impl {
  *
  * This class is the impl part of the PImpl for the logger.
  */
-class logger_impl {
+class RAPIDS_LOGGER_EXPORT logger_impl {
  public:
   logger_impl(std::string name) : underlying{spdlog::logger{name}}
   {
