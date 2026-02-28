@@ -50,7 +50,7 @@ function(ConfigureTest CMAKE_TEST_NAME)
     ${CMAKE_TEST_NAME} PRIVATE rapids_logger::rapids_logger GTest::gmock GTest::gmock_main
                                GTest::gtest GTest::gtest_main
   )
-  gtest_discover_tests(${CMAKE_TEST_NAME})
+  gtest_discover_tests(${CMAKE_TEST_NAME} DISCOVERY_MODE PRE_TEST)
 endfunction()
 
 ConfigureTest(BASIC_TEST basic_test.cpp)
